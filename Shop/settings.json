@@ -1,3 +1,8 @@
 {
-    "token": "8606493381:AAG3w9y3GdHSd2Jul0180gZa7qHG0AEeBcQ"
+    "token": "8606493381:AAG3w9y3GdHSd2Jul0180gZa7qHG0AEeBcQ",
+    "subscribecribed_channels": -1002389669978,
+    "work_channel": -1002538238441,
+    "product_purchase_message": "Вы успешно приобрели {product_name} \n Для того, чтобы ваш заказ был корректно обработан, пожалуйста заполните данные для входа корректно: \n Логин - vasyapupkin@gmail.com \n Пароль - 1234567890.",
+    "workers_purchase_notification": "Новый заказ! \n {user} произвел оплату товара {product_name} \n Данные для входа в аккаунт: \n {data} \n Как только вы выполните заказ, не забудьте нажать кнопку 'Выдчача товара завершена' ",
+    "admin_id": 5576584412
 }

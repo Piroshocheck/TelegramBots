@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^Get-Process python$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

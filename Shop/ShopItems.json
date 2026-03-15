@@ -1,0 +1,37 @@
+﻿[
+    {
+        "id": 1,
+        "name": "Подписка на Spotify Premium",
+        "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Spotify_icon.svg/1200px-Spotify_icon.svg.png",
+        "description": "Получите доступ к миллионам песен без рекламы и с возможностью скачивания для офлайн-прослушивания.",
+        "price": 1001
+    },
+    {
+        "id": 3,
+        "name": "Подписка на Netflix",
+        "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Netflix_2015_logo.svg/1200px-Netflix_2015_logo.svg.png",
+        "description": "Смотрите фильмы и сериалы без рекламы, с возможностью скачивания для офлайн-просмотра.",
+        "price": 1003
+    },
+    {
+        "id": 4,
+        "name": "Подписка на Amazon Prime Video",
+        "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Amazon_Prime_Video_logo.svg/1200px-Amazon_Prime_Video_logo.svg.png",
+        "description": "Смотрите фильмы и сериалы без рекламы, с возможностью скачивания для офлайн-просмотра.",
+        "price": 1004
+    },
+    {
+        "id": 5,
+        "name": "Chat GPT-5 Turbo",
+        "price": 1500,
+        "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/OpenAI_Logo.svg/1200px-OpenAI_Logo.svg.png",
+        "description": "Chat GPT - самая стабильная нейросеть на всем диком рынке. Она умеет рисовать, сочинять и анеализировать, а с подпиской Plus и Turbo все ограничения снимаются! Самый приятный подарок на экзамене!"
+    },
+    {
+        "id": 6,
+        "name": "Twitch Turbo",
+        "price": 600,
+        "description": "Поддержите авторов своей платной подпиской Turbo, а также получите дополнительные преимущества такие как: просмотр без рекламы, эксклюзивный значок и удвоеные баллы каналов.",
+        "image": "https://m.media-amazon.com/images/I/21kRx-CJsUL.png"
+    }
+]

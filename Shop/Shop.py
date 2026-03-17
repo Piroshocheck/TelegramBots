@@ -1,4 +1,5 @@
-﻿import os
+﻿from operator import call
+import os
 import json 
 from random import randint
 import telebot
@@ -28,9 +29,9 @@ dataname = {
 
 try:
     me = bot.get_me()
-    print(f"Бот запущен: @{me.username}, ID: {me.id}")
+    print(f"[TEST]Бот запущен: @{me.username}, ID: {me.id}")
 except Exception as e:
-    print(f"Ошибка при проверке бота: {e}")
+    print(f"[TEST]Ошибка при проверке бота: {e}")
     exit(1)
 
 welcomeKeyboard = types.InlineKeyboardMarkup()
@@ -49,9 +50,19 @@ def find_product_by_id(id:int):
 
 @bot.callback_query_handler(func=lambda call: True)
 def handle_callback_query(call):
-    if call.message.from_user.id == me.id:
-        return
-    print(f"Получен callback от пользователя {call.from_user.id} с данными: {call.data}")
+    print(f"[TEST]Получен callback от пользователя {call.from_user.id} с данными: {call.data}")
+    
+    if call.data.startswith("edit_") and len(call.data.split("_")) == 2:
+        print(f"[TEST]Пользователь {call.from_user.id} выбрал редактирование товара с данными: {call.data.split('_')}")
+        item = find_product_by_id(int(call.data.split("_")[1]))
+        if item:
+            editKeyboard = types.InlineKeyboardMarkup(row_width=1)
+            for key in dataname.keys():
+                editKeyboard.add(types.InlineKeyboardButton(dataname[key], callback_data=f"edit_{key}_{item['id']}"))
+            editKeyboard.add(types.InlineKeyboardButton("Назад", callback_data="editproduct"))
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=f"Вы редактируете товар {item['name']}",reply_markup=editKeyboard)
+
+
     if call.data == 'products':
         shopButtons = types.InlineKeyboardMarkup()
         for item in shopitems:
@@ -66,7 +77,7 @@ def handle_callback_query(call):
         bot.send_message(call.message.chat.id, f"🪪Ваш ID: {call.from_user.id}\n🥸Ваше имя: {call.from_user.first_name}",reply_markup=welcomeKeyboard)
 
     if call.data.startswith("buy_"):
-        print(f"Пользователь {call.from_user.id} выбрал товар с ID {call.data.split('_')[1]}")
+        print(f"[TEST]Пользователь {call.from_user.id} выбрал товар с ID {call.data.split('_')[1]}")
         item_id = int(call.data.split("_")[1])
         for item in shopitems:
             if item['id'] == item_id:
@@ -121,41 +132,14 @@ def handle_callback_query(call):
                 bot.send_message(chat_id=customer['user_id'], text=f"Заказ {order_number} завершён! \n По всем вопросам, касающихся заказа и/или его выполнения обращайтесь в поддержку @Flaemee \n Спасибо за покупку!💖")
                 break
        
-    if call.data.startswith("edit_"):
-        item = find_product_by_id(int(call.data.split("_")[1]))
-        if item:
-            editKeyboard = types.InlineKeyboardMarkup(row_width=1)
-            for key in dataname.keys():
-                editKeyboard.add(types.InlineKeyboardButton(dataname[key], callback_data=f"edit_{key}_{item['id']}"))
-            editKeyboard.add(types.InlineKeyboardButton("Назад", callback_data="editproduct"))
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=f"Вы редактируете товар {item['name']}",reply_markup=editKeyboard)
-
     if call.data.startswith("edit_") and len(call.data.split("_")) == 3:
-        item = find_product_by_id(int(call.data.split("_")[3]))
+        print(f"Пользователь {call.from_user.id} выбрал редактирование товара с данными: {call.data.split('_')[2]}")
+        item = find_product_by_id(int(call.data.split("_")[2]))
         if item:
             key = call.data.split("_")[1]
             user_states[call.from_user.id] = {'stage': f'edit_{key}', 'item_id': item['id']}
             bot.send_message(call.message.chat.id, f"Введите новое значение для {dataname[key]} (текущее значение: {item[key]})")
-            @bot.message_handler(func=lambda m: m.text and not m.text.startswith('/'))
-            def handle_edit_product(message):
-                state = user_states.get(message.from_user.id)
-                if state and state['stage'].startswith('edit_'):
-                    key = state['stage'].split("_")[1]
-                    item_id = state['item_id']
-                    item = find_product_by_id(item_id)
-                    if item:
-                        if key == 'price':
-                            try:
-                                item[key] = int(message.text.strip())
-                            except ValueError:
-                                bot.reply_to(message, "Цена должна быть числом. Попробуйте снова.")
-                                return
-                        else:
-                            item[key] = message.text.strip()
-                        with open(os.path.join(path, 'ShopItems.json'), 'w', encoding='utf-8-sig') as f:
-                            json.dump(shopitems, f, ensure_ascii=False, indent=4)
-                        bot.reply_to(message, f"{dataname[key]} товара '{item['name']}' успешно обновлено!")
-                        del user_states[message.from_user.id]  # Очистить состояние
+    
     
 def check_subscription(user_id):
     try:
@@ -167,7 +151,7 @@ def check_subscription(user_id):
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    print(f"Получена команда /start от пользователя {message.from_user.id}")
+    print(f"[TEST]Получена команда /start от пользователя {message.from_user.id}")
     if check_subscription(message.from_user.id):
         bot.send_message(message.chat.id, "Добро пожаловать в магазин! Вы можете просмотреть наши товары, нажав кнопку ниже.", reply_markup=welcomeKeyboard)
     else:
@@ -176,6 +160,9 @@ def start(message):
 @bot.message_handler(commands=['newproduct'])
 def new_product_create(message):
     user_id = message.from_user.id
+    if message.from_user.id == bot.bot_id:
+        print(f"[TEST]Игнорируем callback от самого бота")
+        return
     if bot.get_chat_member(settings['subscribecribed_channels'], user_id).status not in ['creator', 'administrator']:
         bot.reply_to(message, "У вас нет прав для добавления товаров.")
         return
@@ -188,7 +175,39 @@ new_product = {}
 @bot.message_handler(func=lambda m: m.text and not m.text.startswith('/'))
 def handle_new_product_steps(message):
     user_id = message.from_user.id
+    user_id = message.from_user.id
     
+    message = message
+    user_id = message.from_user.id
+    state = user_states.get(user_id)
+    print(f"[TEST]Состояние пользователя {user_id}: {state}")
+    if state and state['stage'].startswith('edit_') and message.from_user.id == user_id:
+        print(f"[TEST]Пользователь {user_id} находится в процессе редактирования товара с состоянием: {state}")
+        key = state['stage'].split("_")[1]
+        item_id = state['item_id']
+        item = find_product_by_id(item_id)
+        if item: 
+            print(f"[TEST]Пользователь {user_id} редактирует товар с ID {item_id}, ключ {key}, новое значение: {message.text.strip()}")  
+            if key == 'price':
+                try:
+                    item[key] = int(message.text.strip())
+                except ValueError:
+                    bot.reply_to(message, "Цена должна быть числом. Попробуйте снова.")
+                    return
+            else:
+                item[key] = message.text.strip()
+            with open(os.path.join(path, 'ShopItems.json'), 'w', encoding='utf-8-sig') as f:
+                json.dump(shopitems, f, ensure_ascii=False, indent=4)
+            bot.reply_to(message, f"{dataname[key]} товара '{item['name']}' успешно обновлено!")
+            del user_states[user_id]  # Очистить состояние
+            bot.send_message(message.chat.id, f'Вы успешно поменяли {dataname[key]} товара {item["name"]} на {message.text.strip()}')
+            return
+        else:
+            print(f"[TEST]Товар с ID {item_id} не найден для редактирования пользователем {user_id}")
+        return
+    else:
+        print(f"[TEST]Нет активного состояния редактирования для пользователя {user_id}")
+        
     for customer in customers:
         if customer['user_id'] == user_id and customer['status'] == 'pending':
             confrimKeyboard = types.InlineKeyboardMarkup()
@@ -202,20 +221,19 @@ def handle_new_product_steps(message):
     state = user_states[user_id]
     stage = state['stage']
     
-    
     if stage == 'name':
         new_product.clear()
         new_product['name'] = message.text.strip()
         print(new_product['name'])
         state['stage'] = 'price'
         bot.send_message(message.chat.id, "Введите цену нового товара")
-        print(new_product)
+        print(f"[TEST]Новое значение названия: {new_product['name']}")
     elif stage == 'price':
         try:
             new_product['price'] = int(message.text.strip())
             state['stage'] = 'description'
             bot.send_message(message.chat.id, "Введите описание нового товара")
-            print(new_product)
+            print(f"[TEST]Новое значение цены: {new_product['price']}")
         except ValueError:
             bot.reply_to(message, "Цена должна быть числом. Попробуйте снова.")
     elif stage == 'description':
@@ -234,7 +252,7 @@ def handle_new_product_steps(message):
         
         # Добавление товара
         new_id = max(item['id'] for item in shopitems) + 1 if shopitems else 1
-        print(f"Пользователь {message.from_user.id} добавляет товар: {new_product}")
+        print(f"[TEST]Пользователь {message.from_user.id} добавляет товар: {new_product}")
         new_item = {
             'id': new_id,
             'name': new_product['name'],
@@ -310,16 +328,6 @@ def remove_product(message):
                 del user_states[message.from_user.id]  # Очистить состояние
                 return
     
-@bot.message_handler(commands=['orders'])
-def view_orders(message):
-    if message.chat.id != settings['work_channel'] or not bot.get_chat_member(settings['subscribecribed_channels'], message.from_user.id).status in ['creator', 'administrator']:
-        bot.reply_to(message, "У вас нет доступа к этой команде.")
-        return
-    orderButtons = types.InlineKeyboardMarkup(row_width=2)
-    for order in customers:
-        orderButton = types.InlineKeyboardButton(f"Заказ {order['order_number']}", callback_data=f'view_order_{order["order_number"]}')
-        orderButtons.add(orderButton)
-    bot.send_message(message.chat.id, "Выберите заказ для просмотра:", reply_markup=orderButtons)
 
 @bot.message_handler(commands=['editproduct'])
 def edit_product(message):
@@ -332,7 +340,7 @@ def edit_product(message):
         editButtons.add(types.InlineKeyboardButton(f"{item['name']}", callback_data=f"edit_{item['id']}"))
     bot.send_message(message.chat.id, f"Выберите товар для редактирования:", reply_markup=editButtons)
    
-    
+
 bot.infinity_polling(
     allowed_updates=['message', 'callback_query']
 )

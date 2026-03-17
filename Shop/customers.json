@@ -1,0 +1,38 @@
+﻿[
+    {
+        "user_id": 1051931439,
+        "product_id": 1,
+        "status": "waiting_for_payment",
+        "order_number": 800705
+    },
+    {
+        "user_id": 1051931439,
+        "product_id": 1,
+        "status": "waiting_for_payment",
+        "order_number": 436170
+    },
+    {
+        "user_id": 1051931439,
+        "product_id": 1,
+        "status": "completed",
+        "order_number": 261164
+    },
+    {
+        "user_id": 1051931439,
+        "product_id": 1,
+        "status": "completed",
+        "order_number": 825749
+    },
+    {
+        "user_id": 1051931439,
+        "product_id": 1,
+        "status": "waiting_for_payment",
+        "order_number": 119028
+    },
+    {
+        "user_id": 1051931439,
+        "product_id": 1,
+        "status": "completed",
+        "order_number": 803321
+    }
+]

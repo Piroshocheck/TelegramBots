@@ -1,12 +1,16 @@
 ﻿from operator import call
-import os
-import json 
+import os 
+import json
+import time
+import yookassa
+import uuid
+from yookassa import Configuration, Payment
 from random import randint
 import telebot
 from telebot import types
 
 path = os.path.dirname(__file__)
-with open(os.path.join(path, 'settings.json'), 'r', encoding='cp1251') as f:
+with open(os.path.join(path, 'settings.json'), 'r', encoding='utf-8-sig') as f:
     settings = json.load(f)
 
 with open(os.path.join(path, 'ShopItems.json'), 'r', encoding='utf-8-sig') as f:    
@@ -27,6 +31,9 @@ dataname = {
 "image": "Изображение"               
 }
 
+yookassa.Configuration.account_id = settings['shop_id']
+yookassa.Configuration.secret_key = settings['secret_key']
+
 try:
     me = bot.get_me()
     print(f"[TEST]Бот запущен: @{me.username}, ID: {me.id}")
@@ -40,12 +47,55 @@ welcomeKeyboard.add(types.InlineKeyboardButton("Профиль", callback_data="
 
 subscribeKeyboard = types.InlineKeyboardMarkup()
 subscribeKeyboard.add(types.InlineKeyboardButton("Подписаться", url="https://t.me/misterLogovo"))
- 
+
+def generate_confirm_buttons(item_id):
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(types.InlineKeyboardButton("Подтвердить покупку", callback_data=f"confirm_payment_{item_id}"))
+    keyboard.add(types.InlineKeyboardButton("Отмена", callback_data=f"select_{item_id}"))
+    return keyboard
+
+def generate_payment_button(payment_url,item_id):
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(types.InlineKeyboardButton("Оплатить", url=payment_url))
+    keyboard.add(types.InlineKeyboardButton("Отмена", callback_data="buy_" + str(item_id)))
+    return keyboard
+
+## Поиск продукта по ID
 def find_product_by_id(id:int):
     for item in shopitems:
         if item['id'] == id:
             return item
     return False
+
+def create_payment(order_id:int, value:int): 
+    payment = Payment.create({
+        "amount": {
+            "value": str(value),
+            "currency": "RUB"
+        },
+        "confirmation": {
+            "type": "redirect",
+            "return_url": "https://t.me/FlaemeeBot"
+        },
+        "capture": True,
+        "description": f"Оплата товаров по заказу №{order_id}"
+    }, uuid.uuid4())
+    return payment
+
+
+
+
+
+## Админ ли пользователь
+def check_permission(message):
+    try:
+        if bot.get_chat_member(settings['subscribecribed_channels'], message.from_user.id) in ['creator', 'administrator']:
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(f"Ошибка при проверке прав: {e}")
+        return False
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -67,7 +117,7 @@ def handle_callback_query(call):
         shopButtons = types.InlineKeyboardMarkup()
         for item in shopitems:
             print(type(item['name']))
-            shopButtons.add(types.InlineKeyboardButton(item['name'] + f" ({str(item['price'])} руб.)", callback_data=f"buy_{int(item['id'])}"))
+            shopButtons.add(types.InlineKeyboardButton(item['name'] + f" ({str(item['price'])} руб.)", callback_data=f"select_{int(item['id'])}"))
         shopButtons.add(types.InlineKeyboardButton("Назад", callback_data="back_to_welcome"))
         bot.delete_message(call.message.chat.id, call.message.message_id)
         bot.send_message(call.message.chat.id, "Выберите товар из списка ниже:", reply_markup=shopButtons)
@@ -76,46 +126,67 @@ def handle_callback_query(call):
         bot.delete_message(call.message.chat.id, call.message.message_id)
         bot.send_message(call.message.chat.id, f"🪪Ваш ID: {call.from_user.id}\n🥸Ваше имя: {call.from_user.first_name}",reply_markup=welcomeKeyboard)
 
-    if call.data.startswith("buy_"):
+    if call.data.startswith("select_"):
         print(f"[TEST]Пользователь {call.from_user.id} выбрал товар с ID {call.data.split('_')[1]}")
         item_id = int(call.data.split("_")[1])
         for item in shopitems:
             if item['id'] == item_id:
                 productKeyboard = types.InlineKeyboardMarkup()
-                productKeyboard.add(types.InlineKeyboardButton("Купить", callback_data=f"confirm_buy_{item['id']}"))
+                productKeyboard.add(types.InlineKeyboardButton("Купить", callback_data=f"buy_{item['id']}"))
                 productKeyboard.add(types.InlineKeyboardButton("Назад", callback_data="products"))
                 bot.edit_message_media(chat_id=call.message.chat.id, message_id=call.message.message_id, media=types.InputMediaPhoto(item['image']), reply_markup=productKeyboard)
                 bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id, caption=f"{item['name']}\n\n{item['description']}\n\nЦена: {item['price']} руб.",reply_markup=productKeyboard)
                 break
 
-    if call.data.startswith("confirm_buy_"):
+    if call.data.startswith("buy_"):
+        item = find_product_by_id(int(call.data.split("_")[1]))
         for customer in customers:
             if customer['user_id'] == call.from_user.id and customer['status'] == 'pending':
                 bot.send_message(call.message.chat.id, "У вас уже есть незавершенный заказ.")
                 return
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        bot.send_photo(call.message.chat.id, item['image'], caption=f"Вы точно хотите приобрести {item['name']}?", reply_markup=generate_confirm_buttons(item['id']))
 
-        orderNumber = randint(100000, 999999)
+    
+    if call.data.startswith("confirm_payment_"):
+        order_number = randint(100000, 999999)
         item_id = int(call.data.split("_")[2])
-        for item in shopitems:
-            if item['id'] == item_id:
-             
-             customers.append({
-                      "user_id": call.from_user.id,
-                      "product_id": item['id'],
-                      "status": "pending",
-                      "order_number": orderNumber
-                 })
-             with open(os.path.join(path, 'customers.json'), 'w', encoding='utf-8-sig') as f:
-                json.dump(customers, f, ensure_ascii=False, indent=4)
-             try:
-                  bot.delete_message(call.message.chat.id, call.message.message_id)  
-                  bot.send_message(chat_id=call.message.chat.id,text=str.format(settings['product_purchase_message'], product_name=item['name']))
-             except Exception as e:
-                                bot.send_message(chat_id=call.message.chat.id,text=str.format(settings['product_purchase_message'], product_name=item['name']))
-
-                              
+        item = find_product_by_id(item_id)
+        customers.append({
+            "user_id": call.from_user.id,
+            "product_id": item_id,
+            "status": "waiting_for_payment",
+            "order_number": order_number
+        })
+        with open(os.path.join(path, 'customers.json'), 'w', encoding='utf-8-sig') as f:
+            json.dump(customers, f, ensure_ascii=False, indent=4)
+        payment = create_payment(order_id=order_number, value=item['price'])
+        payMessage = bot.send_message(call.message.chat.id, f"Пожалуйста, оплатите заказ по ссылке ниже в течении 10 минут. \n Оплата проходит в течении 10-15 секунд", reply_markup=generate_payment_button(payment.confirmation.confirmation_url,item_id))
+        status = yookassa.Payment.find_one(payment.id).status
+        print(f"[TEST]Статус оплаты для заказа {order_number}: {status}")
+        while status != 'succeeded' or status != 'canceled':
+            status = yookassa.Payment.find_one(payment.id).status
+            if status == 'succeeded':
+                time.sleep(10)
+                for customer in customers:
+                    if customer['order_number'] == order_number:
+                        customer['status'] = 'pending'
+                        with open(os.path.join(path, 'customers.json'), 'w', encoding='utf-8-sig') as f:
+                            json.dump(customers, f, ensure_ascii=False, indent=4)
+                bot.send_message(call.message.chat.id, text=settings['product_purchase_message'].format(product_name=item['name']), reply_markup=welcomeKeyboard)
+                bot.delete_messages(call.message.chat.id, [call.message.message_id, payMessage.message_id])
+                break
+            elif status == 'canceled':
+                customers.remove(next(customer for customer in customers if customer['order_number'] == order_number))
+                with open(os.path.join(path, 'customers.json'), 'w', encoding='utf-8-sig') as f:
+                    json.dump(customers, f, ensure_ascii=False, indent=4)
+                bot.send_message(call.message.chat.id, "Покупка отменена.", reply_markup=welcomeKeyboard)
+                bot.delete_message(call.message.chat.id, call.message.message_id)
+                break
+            else:
+                print(f"[TEST]Ожидание оплаты для заказа {order_number}. Текущий статус: {status}")
         
-
+        
     if call.data == "back_to_welcome":
         start(call.message)
         bot.delete_message(call.message.chat.id, call.message.message_id)
@@ -173,7 +244,7 @@ def new_product_create(message):
 new_product = {}
 
 @bot.message_handler(func=lambda m: m.text and not m.text.startswith('/'))
-def handle_new_product_steps(message):
+def handle_input(message):
     user_id = message.from_user.id
     user_id = message.from_user.id
     
@@ -200,7 +271,6 @@ def handle_new_product_steps(message):
                 json.dump(shopitems, f, ensure_ascii=False, indent=4)
             bot.reply_to(message, f"{dataname[key]} товара '{item['name']}' успешно обновлено!")
             del user_states[user_id]  # Очистить состояние
-            bot.send_message(message.chat.id, f'Вы успешно поменяли {dataname[key]} товара {item["name"]} на {message.text.strip()}')
             return
         else:
             print(f"[TEST]Товар с ID {item_id} не найден для редактирования пользователем {user_id}")
@@ -327,6 +397,17 @@ def remove_product(message):
                 bot.reply_to(message, f"Товар с ID {item['id']} успешно удалён!")
                 del user_states[message.from_user.id]  # Очистить состояние
                 return
+
+@bot.message_handler(commands=['orders'])
+def view_orders(message):
+    if message.chat.id != settings['work_channel'] or not bot.get_chat_member(settings['subscribecribed_channels'], message.from_user.id).status in ['creator', 'administrator']:
+        bot.reply_to(message, "У вас нет доступа к этой команде.")
+        return
+    orderButtons = types.InlineKeyboardMarkup(row_width=2)
+    for order in customers:
+        orderButton = types.InlineKeyboardButton(f"Заказ {order['order_number']}", callback_data=f'view_order_{order["order_number"]}')
+        orderButtons.add(orderButton)
+    bot.send_message(message.chat.id, "Выберите заказ для просмотра:", reply_markup=orderButtons)
     
 
 @bot.message_handler(commands=['editproduct'])

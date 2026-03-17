@@ -1,17 +1,17 @@
 ﻿[
     {
         "id": 1,
-        "name": "Подписка на Spotify Premium",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Spotify_icon.svg/1200px-Spotify_icon.svg.png",
+        "name": "Spotify Premium",
+        "image": "https://m.media-amazon.com/images/I/51rttY7a+9L.png",
         "description": "Получите доступ к миллионам песен без рекламы и с возможностью скачивания для офлайн-прослушивания.",
-        "price": 1001
+        "price": 1
     },
     {
         "id": 3,
-        "name": "Подписка на Netflix",
+        "name": "Zetflix",
         "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Netflix_2015_logo.svg/1200px-Netflix_2015_logo.svg.png",
         "description": "Смотрите фильмы и сериалы без рекламы, с возможностью скачивания для офлайн-просмотра.",
-        "price": 1003
+        "price": 6666
     },
     {
         "id": 4,
@@ -24,7 +24,7 @@
         "id": 5,
         "name": "Chat GPT-5 Turbo",
         "price": 1500,
-        "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/OpenAI_Logo.svg/1200px-OpenAI_Logo.svg.png",
+        "image": "https://www.logicgate.com/wp-content/smush-webp/plt-openai-01-hero-01.png.webp",
         "description": "Chat GPT - самая стабильная нейросеть на всем диком рынке. Она умеет рисовать, сочинять и анеализировать, а с подпиской Plus и Turbo все ограничения снимаются! Самый приятный подарок на экзамене!"
     },
     {
